@@ -4,10 +4,10 @@ namespace CalypsDoH;
 
 include __DIR__.'/Utilities/index.php';
 
-use CaplypsDoH\Utilities\DNSLib;
-use CaplypsDoH\Utilities\Downloader;
-use CaplypsDoH\Utilities\GrepLR;
-use CaplypsDoH\Utilities\Logger;
+use CalypsDoH\Utilities\DNSLib;
+use CalypsDoH\Utilities\Downloader;
+use CalypsDoH\Utilities\GrepLR;
+use CalypsDoH\Utilities\Logger;
 
 class Server {
     const DOMAIN_CODE_ALLOWED = 0;
@@ -42,7 +42,7 @@ class Server {
         "https://blocklistproject.github.io/Lists/alt-version/gambling-nl.txt",
     ];
  
-    private bool $enableStats = true;
+    private bool $enableStats;
     private string $requestingAccountId = "";
     private string $requestingDeviceName = "";
     private array $allowedDomains = [];
@@ -63,8 +63,8 @@ class Server {
         array $allowedDomains = [], 
         array $blockedDomains = [], 
         int $alarmLevel = 3,
-        int $blockLevel = 3,
-        bool $enableStats = null,
+        int $blockLevel = 2,
+        bool $enableStats = true,
     ) {
         $path = explode("?", $_SERVER['REQUEST_URI'])[0];
         $this->requestingIdentity = basename(dirname($path));
@@ -84,32 +84,37 @@ class Server {
             $this->message = (new DNSLib\Parser())->parseMessage(base64_decode($this->dns));
         } catch(\InvalidArgumentException $e){
             $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
+            die();
         }
 
         $this->enableStats = $enableStats;
-       
         $this->requestedDomain = $this->message->questions[0]->name;
-
+        $this->allowedDomains = $allowedDomains;
+        $this->blockedDomains = $blockedDomains;
         $this->alarming = $alarming ?? self::ALARMABLES;
         $this->annoying = $annoying ?? self::ANNOYANCES;
 
         $domainLevel = $this->checkBlocks();
         if ($domainLevel >= $alarmLevel) {
+            $this->generateBlockedResponse($this->message);
             $this->updateLogs($passphrase, true, false);
-            $this->generateBlockedResponse($this->message);
         } else if ($domainLevel >= $blockLevel) {
-            $this->updateLogs($passphrase, false, false);
             $this->generateBlockedResponse($this->message);
+            $this->updateLogs($passphrase, false, false);
         }
 
-        $this->updateLogs($passphrase, false, true);
         $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
+        $this->updateLogs($passphrase, false, true);
     }
 
     private function updateLogs(string $passphrase, bool $alarmable = false, bool $allowed = true) {
-        $statsLogs = Logger::getLogs($passphrase, $this->requestingIdentity, 'stats');
-        $timesLogs = Logger::getLogs($passphrase, $this->requestingIdentity, 'times');
-        $requestsLogs = Logger::getLogs($passphrase, $this->requestingIdentity, 'requests');
+        $stats = Logger::getLogs($passphrase, $this->requestingIdentity, 'stats');
+        $times = Logger::getLogs($passphrase, $this->requestingIdentity, 'times');
+        $requests = Logger::getLogs($passphrase, $this->requestingIdentity, 'requests');
+
+        $statsLogs = $stats['data'];
+        $timesLogs = $times['data'];
+        $requestsLogs = $requests['data'];
 
         if (
             $statsLogs === false
@@ -131,16 +136,17 @@ class Server {
             $statsLogs["annoyance"]++;
         }
 
-        if ($this->enableStats) {
-            $statsLogs["requested"]++;
-            $timesLogs["inactivity"] = time();
-            Logger::saveLogs($passphrase, $this->requestingIdentity,'stats', $statsLogs);
-            Logger::saveLogs($passphrase, $this->requestingIdentity,'times', $timesLogs);
-        }
+        if ($this->enableStats && $allowed === true) {
+            $statsLogs["allowed"]++;
+        } 
 
-        if (!empty($requestsLogs)) {
-            Logger::saveLogs($passphrase, $this->requestingIdentity,'requests', $requestsLogs);
+        if ($this->enableStats) {
+            $statsLogs["requests"]++;
+            $timesLogs["inactivity"] = time();
         }
+        Logger::saveLogs($passphrase, 'stats', $statsLogs, $stats['handler']);
+        Logger::saveLogs($passphrase, 'times', $timesLogs, $times['handler']);
+        Logger::saveLogs($passphrase,'requests', $requestsLogs, $requests['handler']);
     }
 
     private function getAllowedResponse($dnsServers, $dns) {
@@ -165,8 +171,7 @@ class Server {
             error_log("Unsupported DoH Server: {$dnsServer}");
         }
 
-        header('Content-Type: '.$_SERVER['HTTP_ACCEPT']);
-        die($dohResponse);
+        $this->closeClientConnectionWithPayload($dohResponse);
     }
 
     private function generateBlockedResponse($message = null) {
@@ -178,12 +183,25 @@ class Server {
         $message->rd = true;
         $message->id = DNSLib\Message::generateId();
         $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
+        $this->closeClientConnectionWithPayload((new DNSLib\BinaryDumper())->toBinary($message));
+    }
+
+    private function closeClientConnectionWithPayload(string $payload) {
+        ob_start();
+        echo $payload;
+        $size = ob_get_length();
         header('Content-Type: '.$_SERVER['HTTP_ACCEPT']);
-        die((new DNSLib\BinaryDumper())->toBinary($message));
+        header("Content-Encoding: none");
+        header("Content-Length: {$size}");
+        header("Connection: close");
+        ob_end_flush();
+        @ob_flush();
+        flush();
+        if(session_id()) session_write_close();
     }
 
     private function checkBlocks() : int {
-        foreach ($this->allowedDoamins as $allowedDomainFragment) {
+        foreach ($this->allowedDomains as $allowedDomainFragment) {
             if (strstr($this->requestedDomain, $allowedDomainFragment) !== false) {
                 return self::DOMAIN_CODE_ALLOWED_DOMAIN;
             }
@@ -207,18 +225,18 @@ class Server {
     }
 
     private function isAlarming($domain) {
-        $directory = __DIR__.DIRECTORY_SEPARATOR."storage".DIRECTORY_SEPARATOR."ALARMING".DIRECTORY_SEPARATOR;
+        $directory = __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR."ALARMING".DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
             mkdir($directory, 0777, true);
         }
 
-        foreach ($this->alarmables as $blocklist) {
+        foreach ($this->alarming as $blocklist) {
             $localPath = $directory.basename($blocklist);
             if (!is_file($localPath) || time() - filemtime($localPath) >= 60 * 60 * 24 * 1) {
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if (new CalypsDoH\Utilities\GrepLR($localPath, $domain)) {
+            if (GrepLR::run($localPath, $domain)) {
                 return true;
             }
         }
@@ -227,18 +245,18 @@ class Server {
     }
     
     private function isAnnoying($domain) {
-        $directory = __DIR__.DIRECTORY_SEPARATOR."storage".DIRECTORY_SEPARATOR."ANNOYANCES".DIRECTORY_SEPARATOR;
+        $directory = __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR."ANNOYANCES".DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
             mkdir($directory, 0777, true);
         }
 
-        foreach ($this->annoyables as $blocklist) {
+        foreach ($this->annoying as $blocklist) {
             $localPath = $directory.basename($blocklist);
             if (!is_file($localPath) || time() - filemtime($localPath) >= 60 * 60 * 24 * 1) {
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if (new CalypsDoH\Utilities\GrepLR($localPath, $domain)) {
+            if (GrepLR::run($localPath, $domain)) {
                 return true;
             }
         }

@@ -3,7 +3,7 @@
 namespace CalypsDoH\Utilities;
 
 class GrepLR {
-    function __constuct(string $filename, string $needle): bool {
+    public static function run(string $filename, string $needle): bool {
         $handle = fopen($filename, "r");
         if ($handle) {
             while (($line = fgets($handle)) !== false) {

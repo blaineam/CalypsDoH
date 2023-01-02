@@ -2,7 +2,7 @@
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use Message;
+use CalypsDoH\Utilities\DNSLib\Message;
 
 /**
  * This class represents a single question in a query/response message
@@ -56,7 +56,7 @@ final class Query
         $class = $this->class !== Message::CLASS_IN ? 'CLASS' . $this->class . ' ' : '';
 
         $type = 'TYPE' . $this->type;
-        $ref = new \ReflectionClass('DNSLib\Message');
+        $ref = new \ReflectionClass('CalypsDoH\Utilities\DNSLib\Message');
         foreach ($ref->getConstants() as $name => $value) {
             if ($value === $this->type && \strpos($name, 'TYPE_') === 0) {
                 $type = \substr($name, 5);

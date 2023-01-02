@@ -2,15 +2,13 @@
 
 namespace CalypsDoH\Utilities;
 
-use AES;
+use CalypsDoH\Utilities\AES;
 
 class Logger {
     const TEMPLATES = [
         "stats" => [
             "requests" => 0,
-            "normal" => 0,
             "allowed" => 0,
-            "blocked" => 0,
             "annoyance" => 0,
             "alarmed" => 0,
         ],
@@ -25,26 +23,38 @@ class Logger {
     ];
 
     private static function getLogPath(string $identity, string $type): string {
-        return __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR.$identity."-".$type.".json";
+        return __DIR__.DIRECTORY_SEPARATOR."..".DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR.$identity."-".$type.".json";
     }
 
     public static function getLogs(string $passphrase, string $identity, string $type): array {
         $logPath = self::getLogPath($identity, $type);
+        $handler = fopen($logPath, "c+");
+
+        if (!flock($handler, LOCK_EX)) {
+            fclose($handler);
+            return ['handler' => $handler, 'data' => false];
+        }
+
         if(file_exists($logPath)) {
-            if($logs = AES::Decrypt(file_get_contents($logPath), $passphrase)) {
-                return $logs;
+            $data = "";
+            while (!feof($handler)) { $data .= fread($handler, 1024); }
+            $data = trim($data);
+            if (empty($data)) {
+                $logs = self::TEMPLATES[$type];
+            } else if(($logs = AES::Decrypt($data, $passphrase)) || json_last_error() === JSON_ERROR_NONE) {
+                return ['handler' => $handler, 'data' => $logs];
             } else {
                 error_log("could not read logs file: {$logPath}");
-                return false;
+                return ['handler' => $handler, 'data' => false];
             }
         } else {
             $logs = self::TEMPLATES[$type];
         }
 
-        return $logs;
+        return ['handler' => $handler, 'data' => $logs];
     }
 
-    public static function saveLogs(string $passphrase, string $identity, string $type, array $logs) {
+    public static function saveLogs(string $passphrase, string $type, array $logs, $handler) {
         if (
             in_array($type, ['stats', 'times']) 
             && count(array_intersect_key(array_flip(array_keys(self::TEMPLATES[$type])), $logs)) !== count(self::TEMPLATES[$type])
@@ -52,9 +62,11 @@ class Logger {
             error_log('Invalid structure for attempted log save.');
             return;
         }
-
-        $logPath = self::getLogPath($identity, $type);
-        file_put_contents($logPath, AES::Encrypt($logs, $passphrase));
+        
+        ftruncate($handler,0);
+        fwrite($handler, AES::Encrypt($logs, $passphrase));
+        flock($handler, LOCK_UN);
+        fclose($handler);
     }
 
 }

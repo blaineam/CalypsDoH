@@ -3,7 +3,7 @@
 namespace CalypsDoH\Utilities;
 
 class UUID {
-    function __constuct() {
+    public static function v4() {
         $out = bin2hex(random_bytes(18));
         $out[8]  = "-";
         $out[13] = "-";

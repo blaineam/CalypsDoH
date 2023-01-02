@@ -1,6 +1,6 @@
 <?php
 
-namespace CalypSDoH\Utilities;
+namespace CalypsDoH\Utilities;
 
 /**
  * Encrypt/Decrypt data from Javascript's CryptoJS

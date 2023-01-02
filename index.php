@@ -5,9 +5,8 @@ include __DIR__.'/CalypsDoH.php';
 new CalypsDoH\Server(
     allowedIdentities: [
         /**
-         * These can be UUIDs or whatever you want to use to associate an allowed user with their logs
+         * These can be UUIDs or whatever url safe string you want to use to associate an allowed user with their logs
          */
-        '',
     ], 
     passphrase: getenv('ENCRYPTION_PASSPHRASE_FOR_LOGS'),
     dohServers: null, // Optional array of DoH Server endpoints that support GET DoH Queries via the ?dbs=... param.

@@ -2,7 +2,7 @@
 
 namespace CalypsDoH\Utilities;
 
-use UUID;
+use CalypsDoH\Utilities\UUID;
 
 class Downloader {
     function __construct(string $identity, string $deviceName) {
@@ -41,7 +41,7 @@ class Downloader {
                     <key>PayloadType</key>
                     <string>com.apple.dnsSettings.managed</string>
                     <key>PayloadUUID</key>
-                    <string>' . new UUID() . '</string>
+                    <string>' . UUID::v4() . '</string>
                     <key>PayloadVersion</key>
                     <integer>1</integer>
                     <key>ProhibitDisablement</key>
@@ -59,7 +59,7 @@ class Downloader {
             <key>PayloadType</key>
             <string>Configuration</string>
             <key>PayloadUUID</key>
-            <string>' . new UUID() . '</string>
+            <string>' . UUID::v4() . '</string>
             <key>PayloadVersion</key>
             <integer>1</integer>
             </dict>

@@ -1,5 +1,7 @@
 <?php
 
+namespace CalypsDoH\Utilities\DNSLib;
+
 /**
  * Tools used to parse and encode DNS Wire Format Messages.
  * @link https://github.com/reactphp/dns

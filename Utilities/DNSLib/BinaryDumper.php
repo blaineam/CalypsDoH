@@ -2,9 +2,9 @@
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use Query;
-use Record;
-use Message;
+use CalypsDoH\Utilities\DNSLib\Query;
+use CalypsDoH\Utilities\DNSLib\Record;
+use CalypsDoH\Utilities\DNSLib\Message;
 
 final class BinaryDumper
 {
