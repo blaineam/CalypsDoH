@@ -69,4 +69,27 @@ class Logger {
         fclose($handler);
     }
 
+    public static function appendLogs(string $passphrase, string $identity, string $deviceName, string $domainName, int $domainLevel) {
+        file_put_contents(self::getLogPath($identity, 'raw'), AES::Encrypt(json_encode([
+            "identity" => $identity,
+            "device" => $deviceName,
+            "domain" => $domainName,
+            "level" => $domainLevel,
+            "time" => date('Y-m-d H:i:s'),
+        ]), $passphrase).PHP_EOL, FILE_APPEND | LOCK_EX);
+    }
+
+    public static function truncateLogs($identity) {
+        while(file_put_contents(self::getLogPath($identity, 'raw'),"", LOCK_EX) === false) {
+            usleep(10);
+        };
+    }
+
+    public static function getReadHandler(string $identity, string $type) {
+        $logPath = self::getLogPath($identity, $type);
+        if(!file_exists($logPath)) {
+            return false;
+        }
+        return fopen($logPath, "r");
+    }
 }

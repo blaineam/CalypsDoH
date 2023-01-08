@@ -15,12 +15,12 @@ class Server {
     const DOMAIN_CODE_ANNOYANCE_BLOCK = 2;
     const DOMAIN_CODE_BLOCKED_DOMAIN = 3;
     const DOMAIN_CODE_ALARMING_BLOCK = 4;
-
+ 
     const DOH_SERVERS = [
         'https://dns.google/dns-query',
+        'https://dns.quad9.net/dns-query',
         'https://cloudflare-dns.com/dns-query',
-        'https://unfiltered.adguard-dns.com/dns-query',
-        'https://freedns.controld.com/p0',
+        'https://mozilla.cloudflare-dns.com/dns-query',
     ]; 
 
     const ANNOYANCES = [
@@ -43,7 +43,7 @@ class Server {
     ];
  
     private bool $enableStats;
-    private string $requestingAccountId = "";
+    private string $requestingIdentity = "";
     private string $requestingDeviceName = "";
     private array $allowedDomains = [];
     private array $blockedDomains = [];
@@ -55,22 +55,30 @@ class Server {
     private string $requestedDomain = "";
 
     function __construct(
-        array $allowedIdentities, 
+        array $allowedIdentities = null, 
         string $passphrase,
         array $dohServers = null, 
         array $alarming = null, 
         array $annoying = null, 
         array $allowedDomains = [], 
         array $blockedDomains = [], 
+        string $requestingIdentity = null,
+        string $requestingDeviceName = null,
         int $alarmLevel = 3,
         int $blockLevel = 2,
         bool $enableStats = true,
     ) {
-        $path = explode("?", $_SERVER['REQUEST_URI'])[0];
-        $this->requestingIdentity = basename(dirname($path));
-        $this->requestingDeviceName = basename($path);
+    	set_time_limit(1);
+        if(is_null($requestingDeviceName) || is_null($requestingIdentity)) {
+            $path = explode("?", $_SERVER['REQUEST_URI'])[0];
+            $this->requestingIdentity = basename(dirname($path));
+            $this->requestingDeviceName = basename($path);
+        } else {
+            $this->requestingIdentity = $requestingIdentity;
+            $this->requestingDeviceName = $requestingDeviceName;
+        }
         
-        if (!in_array($this->requestingIdentity, $allowedIdentities)) {
+        if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities)) {
             die('Invalid Identifier passed to request');
         }
 
@@ -79,12 +87,11 @@ class Server {
         }
 
         $this->dns = ($_GET['dns'] ?? base64_encode(file_get_contents('php://input')));
-        
         try {
             $this->message = (new DNSLib\Parser())->parseMessage(base64_decode($this->dns));
         } catch(\InvalidArgumentException $e){
             $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
-            die();
+            return;
         }
 
         $this->enableStats = $enableStats;
@@ -95,58 +102,15 @@ class Server {
         $this->annoying = $annoying ?? self::ANNOYANCES;
 
         $domainLevel = $this->checkBlocks();
-        if ($domainLevel >= $alarmLevel) {
+        if ($domainLevel >= $blockLevel) {
             $this->generateBlockedResponse($this->message);
-            $this->updateLogs($passphrase, true, false);
-        } else if ($domainLevel >= $blockLevel) {
-            $this->generateBlockedResponse($this->message);
-            $this->updateLogs($passphrase, false, false);
+        } else {
+            $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
         }
 
-        $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
-        $this->updateLogs($passphrase, false, true);
-    }
-
-    private function updateLogs(string $passphrase, bool $alarmable = false, bool $allowed = true) {
-        $stats = Logger::getLogs($passphrase, $this->requestingIdentity, 'stats');
-        $times = Logger::getLogs($passphrase, $this->requestingIdentity, 'times');
-        $requests = Logger::getLogs($passphrase, $this->requestingIdentity, 'requests');
-
-        $statsLogs = $stats['data'];
-        $timesLogs = $times['data'];
-        $requestsLogs = $requests['data'];
-
-        if (
-            $statsLogs === false
-            || $timesLogs === false
-            || $requestsLogs === false
-        ) {
-            return;
+        if ($enableStats) {
+            Logger::appendLogs($passphrase, $this->requestingIdentity, $this->requestingDeviceName, $this->requestedDomain, $domainLevel);
         }
-
-        if ($alarmable === true && $allowed === false) {
-            $time = date('Y-m-d H:i:s');
-            if($this->enableStats) {
-                $statsLogs["alarmed"]++;
-            }
-            $requestsLogs[$this->requestedDomain] = "Denied Access to Website: {$this->requestedDomain} On Device: {$this->requestingDeviceName} At: {$time}";
-        }
-
-        if ($this->enableStats && $allowed === false && $alarmable === false) {
-            $statsLogs["annoyance"]++;
-        }
-
-        if ($this->enableStats && $allowed === true) {
-            $statsLogs["allowed"]++;
-        } 
-
-        if ($this->enableStats) {
-            $statsLogs["requests"]++;
-            $timesLogs["inactivity"] = time();
-        }
-        Logger::saveLogs($passphrase, 'stats', $statsLogs, $stats['handler']);
-        Logger::saveLogs($passphrase, 'times', $timesLogs, $times['handler']);
-        Logger::saveLogs($passphrase,'requests', $requestsLogs, $requests['handler']);
     }
 
     private function getAllowedResponse($dnsServers, $dns) {
@@ -156,48 +120,61 @@ class Server {
                 count($dnsServers) - 1
             )
         ];
-
-        $opts = [
-            'http' => [
-                'method' => 'GET',
-                'header' => 'Accept: '.$_SERVER['HTTP_ACCEPT']
-            ]
-        ];
-
-        $context = stream_context_create($opts);
-        $dohResponse = file_get_contents($dnsServer . '?dns='.urlencode(rtrim($dns, "=")), false, $context);
-        
-        if (empty($dohResponse)) {
-            error_log("Unsupported DoH Server: {$dnsServer}");
-        }
-
-        $this->closeClientConnectionWithPayload($dohResponse);
+        $this->closeConnection(
+            file_get_contents(
+                $dnsServer . '?dns='.urlencode(rtrim($dns, "=")), 
+                false, 
+                stream_context_create(
+                    [
+                        'http' => [
+                            'method' => 'GET',
+                            'header' => 'Accept: '.$_SERVER['HTTP_ACCEPT']
+                        ]
+                    ]
+                )
+            )
+        );
     }
 
     private function generateBlockedResponse($message = null) {
         if (is_null($message)) {
-            $message = new CalypsDoH\Utilities\DNSLib\Message();
+            $message = new Utilities\DNSLib\Message();
+            $message->qr = true;
+            $message->rd = true;
+            $message->id = DNSLib\Message::generateId();
+            $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
+        } else {
+            $message = Utilities\DNSLib\Message::createResponseWithAnswersForQuery(
+                $message->questions[0], 
+                [
+                    new Utilities\DNSLib\Record(
+                        $this->requestedDomain, 
+                        Utilities\DNSLib\Message::TYPE_A,
+                        Utilities\DNSLib\Message::CLASS_IN,
+                        60 * 60 * 24,
+                        '0.0.0.0'
+                    ),
+                    new Utilities\DNSLib\Record(
+                        $this->requestedDomain, 
+                        Utilities\DNSLib\Message::TYPE_AAAA,
+                        Utilities\DNSLib\Message::CLASS_IN,
+                        60 * 60 * 24,
+                        '::'
+                    ),
+                ]
+            );
         }
 
-        $message->qr = true;
-        $message->rd = true;
-        $message->id = DNSLib\Message::generateId();
-        $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
-        $this->closeClientConnectionWithPayload((new DNSLib\BinaryDumper())->toBinary($message));
+        $this->closeConnection((new DNSLib\BinaryDumper())->toBinary($message));
     }
 
-    private function closeClientConnectionWithPayload(string $payload) {
+    public function closeConnection($body){
+        set_time_limit(0);
+        ignore_user_abort(true);
         ob_start();
-        echo $payload;
-        $size = ob_get_length();
-        header('Content-Type: '.$_SERVER['HTTP_ACCEPT']);
-        header("Content-Encoding: none");
-        header("Content-Length: {$size}");
-        header("Connection: close");
+        echo $body;
+        header("Connection: close\r\n");
         ob_end_flush();
-        @ob_flush();
-        flush();
-        if(session_id()) session_write_close();
     }
 
     private function checkBlocks() : int {
@@ -213,18 +190,20 @@ class Server {
             }
         }
         
-        if ($this->isAlarming($this->requestedDomain)) {
+        $useExec = @exec('echo EXEC') === 'EXEC';
+
+        if ($this->isAlarming($this->requestedDomain, $useExec)) {
             return self::DOMAIN_CODE_ALARMING_BLOCK;
         }
 
-        if ($this->isAnnoying($this->requestedDomain)) {
+        if ($this->isAnnoying($this->requestedDomain, $useExec)) {
             return self::DOMAIN_CODE_ANNOYANCE_BLOCK;
         }
 
         return self::DOMAIN_CODE_ALLOWED;
     }
 
-    private function isAlarming($domain) {
+    private function isAlarming($domain, bool $useExec = true) {
         $directory = __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR."ALARMING".DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
             mkdir($directory, 0777, true);
@@ -236,15 +215,23 @@ class Server {
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if (GrepLR::run($localPath, $domain)) {
-                return true;
+            if(!$useExec){
+                if (GrepLR::run($localPath, $domain)) {
+                    return true;
+                }
             }
         }
 
+        if($useExec){
+            $ouput = [];
+            exec("grep -Fx -l " . escapeshellarg($domain) . " {$directory}*", $ouput, $exitCode);
+            return $exitCode == 0;
+        }
+        
         return false;
     }
     
-    private function isAnnoying($domain) {
+    private function isAnnoying($domain, bool $useExec = true) {
         $directory = __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR."ANNOYANCES".DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
             mkdir($directory, 0777, true);
@@ -256,9 +243,17 @@ class Server {
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if (GrepLR::run($localPath, $domain)) {
-                return true;
+            if(!$useExec){
+                if (GrepLR::run($localPath, $domain)) {
+                    return true;
+                }
             }
+        }
+
+        if($useExec){
+            $ouput = [];
+            exec("grep -Fx -l " . escapeshellarg($domain) . " {$directory}*", $ouput, $exitCode);
+            return $exitCode == 0;
         }
 
         return false;
