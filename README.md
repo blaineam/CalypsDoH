@@ -10,7 +10,7 @@ The overall design is quite simple:
 2. Attempt to parse the binary payload to determine the requested domain name.
 3. Check the domain name and determine a DOMAIN_CODE_LEVEL by using publicly available blocklists that are cached to the server for a period of time.
 4. Optionally save logs about the request to an encrypted file for use later by other systems such as a Notifier.
-5. If the domain is in a block list then respond with a NXDOMAIN DNS Response.
+5. If the domain is in a block list then respond with a 0.0.0.0 & :: DNS Response.
 6. If the domain is allowed, proxy the request to a random DoH Server
 
 ## How To Setup
