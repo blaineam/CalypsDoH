@@ -95,11 +95,19 @@ class Server {
         }
 
         $this->enableStats = $enableStats;
-        $this->requestedDomain = $this->message->questions[0]->name;
-        $this->allowedDomains = $allowedDomains;
-        $this->blockedDomains = $blockedDomains;
+        $this->requestedDomain = strtolower($this->message->questions[0]->name);
+        $this->allowedDomains = array_filter($allowedDomains);
+        $this->blockedDomains = array_filter($blockedDomains);
         $this->alarming = $alarming ?? self::ALARMABLES;
         $this->annoying = $annoying ?? self::ANNOYANCES;
+        
+                if (in_array($this->requestedDomain, [
+        "mask.icloud.com",
+        "mask-h2.icloud.com"
+        ])) {
+            $this->generateBlockedResponse(null);
+            return;
+        }
 
         $domainLevel = $this->checkBlocks();
         if ($domainLevel >= $blockLevel) {
