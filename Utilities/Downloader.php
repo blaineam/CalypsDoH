@@ -30,7 +30,7 @@ class Downloader {
                         <key>DNSProtocol</key>
                         <string>HTTPS</string>
                         <key>ServerURL</key>
-                        <string>https://' . $_SERVER['HTTP_REFERER'] . '/' . $identity . '/' . rawurlencode($deviceName) . '</string>
+                        <string>https://' . $_SERVER['HTTP_HOST'] . '/' . $identity . '/' . rawurlencode($deviceName) . '</string>
                     </dict>
                     <key>PayloadDescription</key>
                     <string>Configures device to use Barker Encrypted DNS over HTTPS</string>

@@ -15,13 +15,11 @@ class Server {
     const DOMAIN_CODE_ANNOYANCE_BLOCK = 2;
     const DOMAIN_CODE_BLOCKED_DOMAIN = 3;
     const DOMAIN_CODE_ALARMING_BLOCK = 4;
- 
+
     const DOH_SERVERS = [
         'https://dns.google/dns-query',
-        'https://dns.quad9.net/dns-query',
         'https://cloudflare-dns.com/dns-query',
-        'https://mozilla.cloudflare-dns.com/dns-query',
-    ]; 
+    ];
 
     const ANNOYANCES = [
         "https://blocklistproject.github.io/Lists/alt-version/abuse-nl.txt",
@@ -41,7 +39,7 @@ class Server {
         "https://blocklistproject.github.io/Lists/alt-version/drugs-nl.txt",
         "https://blocklistproject.github.io/Lists/alt-version/gambling-nl.txt",
     ];
- 
+
     private bool $enableStats;
     private string $requestingIdentity = "";
     private string $requestingDeviceName = "";
@@ -55,16 +53,15 @@ class Server {
     private string $requestedDomain = "";
 
     function __construct(
-        array $allowedIdentities = null, 
+        array $allowedIdentities = null,
         string $passphrase,
-        array $dohServers = null, 
-        array $alarming = null, 
-        array $annoying = null, 
-        array $allowedDomains = [], 
-        array $blockedDomains = [], 
+        array $dohServers = null,
+        array $alarming = null,
+        array $annoying = null,
+        array $allowedDomains = [],
+        array $blockedDomains = [],
         string $requestingIdentity = null,
         string $requestingDeviceName = null,
-        int $alarmLevel = 3,
         int $blockLevel = 2,
         bool $enableStats = true,
     ) {
@@ -77,7 +74,7 @@ class Server {
             $this->requestingIdentity = $requestingIdentity;
             $this->requestingDeviceName = $requestingDeviceName;
         }
-        
+
         if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities)) {
             die('Invalid Identifier passed to request');
         }
@@ -100,10 +97,10 @@ class Server {
         $this->blockedDomains = array_filter($blockedDomains);
         $this->alarming = $alarming ?? self::ALARMABLES;
         $this->annoying = $annoying ?? self::ANNOYANCES;
-        
-                if (in_array($this->requestedDomain, [
-        "mask.icloud.com",
-        "mask-h2.icloud.com"
+
+        if (in_array($this->requestedDomain, [
+            "mask.icloud.com",
+            "mask-h2.icloud.com"
         ])) {
             $this->generateBlockedResponse(null);
             return;
@@ -116,8 +113,8 @@ class Server {
             $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
         }
 
-        if ($enableStats) {
-            Logger::appendLogs($passphrase, $this->requestingIdentity, $this->requestingDeviceName, $this->requestedDomain, $domainLevel);
+        if ($this->enableStats) {
+           Logger::appendLogs($passphrase, $this->requestingIdentity, $this->requestingDeviceName, $this->requestedDomain, $domainLevel);
         }
     }
 
@@ -130,8 +127,8 @@ class Server {
         ];
         $this->closeConnection(
             file_get_contents(
-                $dnsServer . '?dns='.urlencode(rtrim($dns, "=")), 
-                false, 
+                $dnsServer . '?dns='.urlencode(rtrim($dns, "=")),
+                false,
                 stream_context_create(
                     [
                         'http' => [
@@ -152,28 +149,42 @@ class Server {
             $message->id = DNSLib\Message::generateId();
             $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
         } else {
+            $records = [];
+            if ($message->questions[0]->type == 65) {
+                $records[] = new Utilities\DNSLib\Record(
+                    $this->requestedDomain,
+                    65,
+                    Utilities\DNSLib\Message::CLASS_IN,
+                    60,
+                    '0 .'
+                );
+            }else if ($message->questions[0]->type == Utilities\DNSLib\Message::TYPE_A) {
+                $records[] = new Utilities\DNSLib\Record(
+                    $this->requestedDomain,
+                    Utilities\DNSLib\Message::TYPE_A,
+                    Utilities\DNSLib\Message::CLASS_IN,
+                    60,
+                    '0.0.0.0'
+                );
+            } else if ($message->questions[0]->type == Utilities\DNSLib\Message::TYPE_AAAA) {
+                $records[] = new Utilities\DNSLib\Record(
+                    $this->requestedDomain,
+                    Utilities\DNSLib\Message::TYPE_AAAA,
+                    Utilities\DNSLib\Message::CLASS_IN,
+                    60,
+                    '::'
+                );
+            }
+
             $message = Utilities\DNSLib\Message::createResponseWithAnswersForQuery(
-                $message->questions[0], 
-                [
-                    new Utilities\DNSLib\Record(
-                        $this->requestedDomain, 
-                        Utilities\DNSLib\Message::TYPE_A,
-                        Utilities\DNSLib\Message::CLASS_IN,
-                        60 * 60 * 24,
-                        '0.0.0.0'
-                    ),
-                    new Utilities\DNSLib\Record(
-                        $this->requestedDomain, 
-                        Utilities\DNSLib\Message::TYPE_AAAA,
-                        Utilities\DNSLib\Message::CLASS_IN,
-                        60 * 60 * 24,
-                        '::'
-                    ),
-                ]
+                $message->questions[0],
+                $records,
             );
+            $message->rcode = DNSLib\Message::RCODE_OK;
         }
 
-        $this->closeConnection((new DNSLib\BinaryDumper())->toBinary($message));
+        $binary = (new DNSLib\BinaryDumper())->toBinary($message);
+        $this->closeConnection($binary);
     }
 
     public function closeConnection($body){
@@ -190,14 +201,14 @@ class Server {
             if (strstr($this->requestedDomain, $allowedDomainFragment) !== false) {
                 return self::DOMAIN_CODE_ALLOWED_DOMAIN;
             }
-        } 
-    
+        }
+
         foreach ($this->blockedDomains as $blockedDomainFragment){
             if (strstr($this->requestedDomain, $blockedDomainFragment) !== false) {
                 return self::DOMAIN_CODE_BLOCKED_DOMAIN;
             }
         }
-        
+
         $useExec = @exec('echo EXEC') === 'EXEC';
 
         if ($this->isAlarming($this->requestedDomain, $useExec)) {
@@ -235,10 +246,10 @@ class Server {
             exec("grep -Fx -l " . escapeshellarg($domain) . " {$directory}*", $ouput, $exitCode);
             return $exitCode == 0;
         }
-        
+
         return false;
     }
-    
+
     private function isAnnoying($domain, bool $useExec = true) {
         $directory = __DIR__.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR."ANNOYANCES".DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
@@ -266,4 +277,4 @@ class Server {
 
         return false;
     }
-} 
+}
