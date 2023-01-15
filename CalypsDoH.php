@@ -102,7 +102,7 @@ class Server {
             "mask.icloud.com",
             "mask-h2.icloud.com"
         ])) {
-            $this->generateBlockedResponse(null);
+            $this->generateBlockedResponse($this->message);
             return;
         }
 
@@ -149,38 +149,9 @@ class Server {
             $message->id = DNSLib\Message::generateId();
             $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
         } else {
-            $records = [];
-            if ($message->questions[0]->type == 65) {
-                $records[] = new Utilities\DNSLib\Record(
-                    $this->requestedDomain,
-                    65,
-                    Utilities\DNSLib\Message::CLASS_IN,
-                    60,
-                    '0 .'
-                );
-            }else if ($message->questions[0]->type == Utilities\DNSLib\Message::TYPE_A) {
-                $records[] = new Utilities\DNSLib\Record(
-                    $this->requestedDomain,
-                    Utilities\DNSLib\Message::TYPE_A,
-                    Utilities\DNSLib\Message::CLASS_IN,
-                    60,
-                    '0.0.0.0'
-                );
-            } else if ($message->questions[0]->type == Utilities\DNSLib\Message::TYPE_AAAA) {
-                $records[] = new Utilities\DNSLib\Record(
-                    $this->requestedDomain,
-                    Utilities\DNSLib\Message::TYPE_AAAA,
-                    Utilities\DNSLib\Message::CLASS_IN,
-                    60,
-                    '::'
-                );
-            }
-
-            $message = Utilities\DNSLib\Message::createResponseWithAnswersForQuery(
-                $message->questions[0],
-                $records,
-            );
-            $message->rcode = DNSLib\Message::RCODE_OK;
+            $message->qr = true;
+            $message->rd = true;
+            $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
         }
 
         $binary = (new DNSLib\BinaryDumper())->toBinary($message);
