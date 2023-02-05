@@ -214,7 +214,7 @@ class Server {
 
         if($useExec){
             $ouput = [];
-            exec("grep -q '^" . escapeshellarg($domain) . "$' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 
@@ -242,7 +242,7 @@ class Server {
 
         if($useExec){
             $ouput = [];
-            exec("grep -q '^" . escapeshellarg($domain) . "$' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 
