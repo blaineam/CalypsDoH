@@ -133,7 +133,7 @@ class Server {
                     [
                         'http' => [
                             'method' => 'GET',
-                            'header' => 'Accept: '.$_SERVER['HTTP_ACCEPT']
+                            'header' => 'Accept: application/dns-message',
                         ]
                     ]
                 )
