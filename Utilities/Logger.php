@@ -5,7 +5,7 @@ namespace CalypsDoH\Utilities;
 use CalypsDoH\Utilities\AES;
 
 class Logger {
-    const TEMPLATES = [
+    public const TEMPLATES = [
         "stats" => [
             "requests" => 0,
             "allowed" => 0,
@@ -18,7 +18,7 @@ class Logger {
             "inactivity" => 0,
         ],
         "requests" => [
-            
+
         ],
     ];
 
@@ -56,13 +56,13 @@ class Logger {
 
     public static function saveLogs(string $passphrase, string $type, array $logs, $handler) {
         if (
-            in_array($type, ['stats', 'times']) 
+            in_array($type, ['stats', 'times'])
             && count(array_intersect_key(array_flip(array_keys(self::TEMPLATES[$type])), $logs)) !== count(self::TEMPLATES[$type])
         ) {
             error_log('Invalid structure for attempted log save.');
             return;
         }
-        
+
         ftruncate($handler,0);
         fwrite($handler, AES::Encrypt($logs, $passphrase));
         flock($handler, LOCK_UN);

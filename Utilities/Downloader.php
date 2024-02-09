@@ -100,8 +100,8 @@ exit /b
 :run
     set DoHClientAddress=https://' . $_SERVER['HTTP_HOST'] . '/' . $identity . '/' . rawurlencode($deviceName) . '
     
-    curl.exe --output C:\nssm.exe --url https://barker.millers.cloud/CalypsDoH/Installers/Windows/nssm.exe
-    curl.exe --output C:\dnsproxy.exe --url https://barker.millers.cloud/CalypsDoH/Installers/Windows/dnsproxy.exe
+    curl.exe --output C:\nssm.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/nssm.exe
+    curl.exe --output C:\dnsproxy.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/dnsproxy.exe
     net stop Barker
     C:\nssm.exe remove Barker
     C:\nssm.exe install Barker "C:\dnsproxy.exe" "-l 0.0.0.0 -p 53 -u %DoHClientAddress% -b 1.1.1.1:53"

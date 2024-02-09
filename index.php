@@ -14,6 +14,7 @@ new CalypsDoH\Server(
     annoying: null, // Optional URLs of blocklists that have a domain per line that you want blocked silently.
     allowedDomains: [], // Optional array of any portion of a domain that you want to always allow.
     blockedDomains: [], // Optional array of any portion of a domain that you want to always block.
+    remaps: [], // Optional array of domain ip pairs that you want to remap.
     blockLevel: 3, // The DOMAIN_CODE level that requests should be blocked. See CalypsDoH.php Constants
     enableStats: true, // Optional boolean to disable request stats from being logged.
 );

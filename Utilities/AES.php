@@ -40,6 +40,9 @@ class AES
     public static function Decrypt(string $jsonStr, string $passphrase)
     {
         $json = json_decode($jsonStr, true);
+        if ($json === false || !isset($json['s']) || !isset($json['iv']) || !isset($json['ct'])) {
+            return false;
+        }
         $salt = hex2bin($json["s"]);
         $iv = hex2bin($json["iv"]);
         $ct = base64_decode($json["ct"]);

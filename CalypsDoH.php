@@ -59,6 +59,7 @@ class Server {
         array $alarming = null,
         array $annoying = null,
         array $allowedDomains = [],
+        array $remaps = [],
         array $blockedDomains = [],
         string $requestingIdentity = null,
         string $requestingDeviceName = null,
@@ -104,6 +105,12 @@ class Server {
         ])) {
             $this->generateBlockedResponse($this->message);
             return;
+        }
+
+        foreach($remaps as $domainIpPair) {
+            if($domainIpPair[0] === $this->requestedDomain) {
+                $this->generateRemappedResponse($this->message, $domainIpPair[1]);
+            }
         }
 
         $domainLevel = $this->checkBlocks();
@@ -154,6 +161,21 @@ class Server {
             $message->rcode = DNSLib\Message::RCODE_NAME_ERROR;
         }
 
+        $binary = (new DNSLib\BinaryDumper())->toBinary($message);
+        $this->closeConnection($binary);
+    }
+
+    private function generateRemappedResponse($message, $ip) {
+        $message->rcode = DNSLib\Message::RCODE_OK;
+        $message->qr = true;
+        $message->rd = true;
+        $message->answers[] = new DNSLib\Record(
+                $this->requestedDomain,
+                DNSLib\Message::TYPE_A,
+                DNSLib\Message::CLASS_IN,
+                0,
+                $ip
+            );
         $binary = (new DNSLib\BinaryDumper())->toBinary($message);
         $this->closeConnection($binary);
     }
