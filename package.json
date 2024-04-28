@@ -1,0 +1,14 @@
+{
+  "name": "calypsdoh",
+  "version": "1.0.0",
+  "description": "A Simple DoH Server written in PHP with support for Blocklists and Basic Logging",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Blaine Miller",
+  "license": "ISC",
+  "dependencies": {
+    "prettier": "^3.2.5"
+  }
+}
