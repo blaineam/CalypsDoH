@@ -1,8 +1,21 @@
 name: Code Style
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
+  phplint:
+    runs-on: ubuntu-latest
+    name: PHP Lint
+    steps:
+      - uses: actions/checkout@v2
+      - id: PHP-Lint
+        uses: J3-Tech/PHP-Lint-Action@v0.0.5
+        with:
+          path: .
+          exclude: vendor
   php-cs-fixer:
     runs-on: ubuntu-latest
 
