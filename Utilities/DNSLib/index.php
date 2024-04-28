@@ -7,8 +7,8 @@ namespace CalypsDoH\Utilities\DNSLib;
  * @link https://github.com/reactphp/dns
  */
 
-include __DIR__.'/Message.php';
-include __DIR__.'/Record.php';
-include __DIR__.'/Query.php';
-include __DIR__.'/BinaryDumper.php';
-include __DIR__.'/Parser.php';
+include __DIR__ . '/Message.php';
+include __DIR__ . '/Record.php';
+include __DIR__ . '/Query.php';
+include __DIR__ . '/BinaryDumper.php';
+include __DIR__ . '/Parser.php';

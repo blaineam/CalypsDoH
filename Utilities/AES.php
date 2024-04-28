@@ -27,7 +27,7 @@ class AES
         $key = substr($salted, 0, 32);
         $iv = substr($salted, 32, 16);
         $encrypted_data = openssl_encrypt(json_encode($value), 'aes-256-cbc', $key, true, $iv);
-        $data = ["ct" => base64_encode($encrypted_data), "iv" => bin2hex($iv), "s" => bin2hex($salt)];
+        $data = ['ct' => base64_encode($encrypted_data), 'iv' => bin2hex($iv), 's' => bin2hex($salt)];
         return json_encode($data);
     }
 
@@ -43,9 +43,9 @@ class AES
         if ($json === false || !isset($json['s']) || !isset($json['iv']) || !isset($json['ct'])) {
             return false;
         }
-        $salt = hex2bin($json["s"]);
-        $iv = hex2bin($json["iv"]);
-        $ct = base64_decode($json["ct"]);
+        $salt = hex2bin($json['s']);
+        $iv = hex2bin($json['iv']);
+        $ct = base64_decode($json['ct']);
         $concatedPassphrase = $passphrase . $salt;
         $md5 = [];
         $md5[0] = md5($concatedPassphrase, true);

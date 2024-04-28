@@ -3,7 +3,9 @@
 namespace CalypsDoH\Utilities;
 
 use CalypsDoH\Server;
-class Category {
+
+class Category
+{
 
     public static function determine(
         string $domain,
@@ -11,8 +13,8 @@ class Category {
         string|null $webShrinkerApiKey = null,
         string|null $webShrinkerApiSecret = null,
     ): string {
-        $storageDirectory = __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR."Storage".DIRECTORY_SEPARATOR;
-        $cachePath = $storageDirectory . "categories.json";
+        $storageDirectory = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR;
+        $cachePath = $storageDirectory . 'categories.json';
         if (file_exists($cachePath)) {
             $cachedCategories = json_decode(file_get_contents($cachePath) ?: '{}', true) ?: [];
             if (array_key_exists($domain, $cachedCategories)) {
@@ -25,8 +27,8 @@ class Category {
         if (!is_null($webShrinkerApiKey) && !is_null($webShrinkerApiSecret)) {
             $options = ['key' => $webShrinkerApiKey];
             $parameters = http_build_query($options);
-            $request = sprintf("categories/v3/%s?%s", base64_encode($domain), $parameters);
-            $hash = md5(sprintf("%s:%s", $webShrinkerApiSecret, $request));
+            $request = sprintf('categories/v3/%s?%s', base64_encode($domain), $parameters);
+            $hash = md5(sprintf('%s:%s', $webShrinkerApiSecret, $request));
             $request = "https://api.webshrinker.com/{$request}&hash={$hash}";
 
             // Initialize cURL and use pre-signed URL authentication
@@ -57,22 +59,22 @@ class Category {
                     // Request limit reached
                     break;
             }
-            return "Unknown";
+            return 'Unknown';
         }
 
-        $directory = $storageDirectory."ALARMING".DIRECTORY_SEPARATOR;
+        $directory = $storageDirectory . 'ALARMING' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
             mkdir($directory, 0777, true);
         }
 
         foreach (Server::ALARMABLES as $blocklist) {
-            $localPath = $directory.basename($blocklist);
+            $localPath = $directory . basename($blocklist);
             if (!is_file($localPath) || time() - filemtime($localPath) >= 60 * 60 * 24 * 1) {
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
-            $category = str_replace("-nl.txt", "", basename($localPath));
+            $category = str_replace('-nl.txt', '', basename($localPath));
 
-            if(!$useExec){
+            if(!$useExec) {
                 if (GrepLR::run($localPath, $domain)) {
                     return $category;
                 }
@@ -84,6 +86,6 @@ class Category {
                 }
             }
         }
-        return "User Defined Block List";
+        return 'User Defined Block List';
     }
 }

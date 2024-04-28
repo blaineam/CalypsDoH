@@ -2,8 +2,6 @@
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use CalypsDoH\Utilities\DNSLib\Message;
-
 /**
  * This class represents a single question in a query/response message
  *

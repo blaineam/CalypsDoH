@@ -2,25 +2,26 @@
 
 namespace CalypsDoH\Utilities;
 
-use CalypsDoH\Utilities\UUID;
-
-class Downloader {
-    function __construct(string $identity, string $deviceName) {
+class Downloader
+{
+    public function __construct(string $identity, string $deviceName)
+    {
         if($_GET['dl'] === 'windows') {
             self::downloadWindowsInstaller($identity, $deviceName);
         }
         self::downloadAppleProfile($identity, $deviceName);
     }
 
-    public static function downloadAppleProfile(string $identity, string $deviceName) {
+    public static function downloadAppleProfile(string $identity, string $deviceName)
+    {
         header('Content-Type: application/x-apple-aspen-config');
         header('Content-Disposition: attachment; filename="barker-apple-'
-                                    .$deviceName.'.mobileconfig"'); 
+                                    . $deviceName . '.mobileconfig"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
 
-        flush(); 
+        flush();
         echo '<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -70,15 +71,16 @@ class Downloader {
         die();
     }
 
-    public static function downloadWindowsInstaller(string $identity, string $deviceName) {
+    public static function downloadWindowsInstaller(string $identity, string $deviceName)
+    {
         header('Content-Type: application/bat');
         header('Content-Disposition: attachment; filename="barker-windows-'
-                                    .$deviceName.'.bat"'); 
+                                    . $deviceName . '.bat"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
 
-        flush(); 
+        flush();
 
         echo '@echo off
 SET scriptpath=%~dp0

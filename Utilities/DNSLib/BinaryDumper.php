@@ -2,10 +2,6 @@
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use CalypsDoH\Utilities\DNSLib\Query;
-use CalypsDoH\Utilities\DNSLib\Record;
-use CalypsDoH\Utilities\DNSLib\Message;
-
 final class BinaryDumper
 {
     /**
@@ -112,7 +108,7 @@ final class BinaryDumper
                     $binary .= $this->domainNameToBinary($record->data['target']);
                     break;
                 case Message::TYPE_SOA:
-                    $binary  = $this->domainNameToBinary($record->data['mname']);
+                    $binary = $this->domainNameToBinary($record->data['mname']);
                     $binary .= $this->domainNameToBinary($record->data['rname']);
                     $binary .= \pack(
                         'N*',

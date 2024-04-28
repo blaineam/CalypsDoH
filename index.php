@@ -1,6 +1,6 @@
 <?php
 
-include __DIR__.'/CalypsDoH.php';
+include __DIR__ . '/CalypsDoH.php';
 
 new CalypsDoH\Server(
     allowedIdentities: [

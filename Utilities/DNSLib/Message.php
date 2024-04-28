@@ -2,9 +2,6 @@
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use CalypsDoH\Utilities\DNSLib\Query;
-use CalypsDoH\Utilities\DNSLib\Record;
-
 /**
  * This class represents an outgoing query message or an incoming response message
  *

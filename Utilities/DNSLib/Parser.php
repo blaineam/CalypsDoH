@@ -1,10 +1,7 @@
-<?php 
+<?php
 
 namespace CalypsDoH\Utilities\DNSLib;
 
-use CalypsDoH\Utilities\DNSLib\Query;
-use CalypsDoH\Utilities\DNSLib\Record;
-use CalypsDoH\Utilities\DNSLib\Message;
 use InvalidArgumentException;
 
 /**
@@ -174,7 +171,7 @@ final class Parser
             $rdata = array();
             while ($consumed < $expected) {
                 $len = ord($data[$consumed]);
-                $rdata[] = (string)substr($data, $consumed + 1, $len);
+                $rdata[] = (string) substr($data, $consumed + 1, $len);
                 $consumed += $len + 1;
             }
         } elseif (Message::TYPE_MX === $type) {
@@ -280,7 +277,7 @@ final class Parser
 
     private function readDomain($data, $consumed)
     {
-        list ($labels, $consumed) = $this->readLabels($data, $consumed);
+        list($labels, $consumed) = $this->readLabels($data, $consumed);
 
         if ($labels === null) {
             return array(null, null);

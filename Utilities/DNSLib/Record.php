@@ -144,10 +144,10 @@ final class Record
      */
     public function __construct($name, $type, $class, $ttl, $data)
     {
-        $this->name     = $name;
-        $this->type     = $type;
-        $this->class    = $class;
-        $this->ttl      = $ttl;
-        $this->data     = $data;
+        $this->name = $name;
+        $this->type = $type;
+        $this->class = $class;
+        $this->ttl = $ttl;
+        $this->data = $data;
     }
 }
