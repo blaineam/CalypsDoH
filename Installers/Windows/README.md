@@ -91,81 +91,95 @@ Help Options:
 ### Simple options
 
 Runs a DNS proxy on `0.0.0.0:53` with a single upstream - Google DNS.
+
 ```shell
 ./dnsproxy -u 8.8.8.8:53
 ```
 
 The same proxy with verbose logging enabled writing it to the file `log.txt`.
+
 ```shell
 ./dnsproxy -u 8.8.8.8:53 -v -o log.txt
 ```
 
 Runs a DNS proxy on `127.0.0.1:5353` with multiple upstreams.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -p 5353 -u 8.8.8.8:53 -u 1.1.1.1:53
 ```
 
 Listen on multiple interfaces and ports:
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -l 192.168.1.10 -p 5353 -p 5354 -u 1.1.1.1
 ```
 
 The plain DNS upstream server may be specified in several ways:
 
- -  With a plain IP address:
-    ```shell
-    ./dnsproxy -l 127.0.0.1 -u 8.8.8.8:53
-    ```
+- With a plain IP address:
 
- -  With a hostname or plain IP address and the `udp://` scheme:
-    ```shell
-    ./dnsproxy -l 127.0.0.1 -u udp://dns.google -u udp://1.1.1.1
-    ```
+  ```shell
+  ./dnsproxy -l 127.0.0.1 -u 8.8.8.8:53
+  ```
 
- -  With a hostname or plain IP address and the `tcp://` scheme to force using
-    TCP:
-    ```shell
-    ./dnsproxy -l 127.0.0.1 -u tcp://dns.google -u tcp://1.1.1.1
-    ```
+- With a hostname or plain IP address and the `udp://` scheme:
+
+  ```shell
+  ./dnsproxy -l 127.0.0.1 -u udp://dns.google -u udp://1.1.1.1
+  ```
+
+- With a hostname or plain IP address and the `tcp://` scheme to force using
+  TCP:
+  ```shell
+  ./dnsproxy -l 127.0.0.1 -u tcp://dns.google -u tcp://1.1.1.1
+  ```
 
 ### Encrypted upstreams
 
 DNS-over-TLS upstream:
+
 ```shell
 ./dnsproxy -u tls://dns.adguard.com
 ```
 
 DNS-over-HTTPS upstream with specified bootstrap DNS:
+
 ```shell
 ./dnsproxy -u https://dns.adguard.com/dns-query -b 1.1.1.1:53
 ```
 
 DNS-over-QUIC upstream:
+
 ```shell
 ./dnsproxy -u quic://dns.adguard.com
 ```
 
 DNS-over-HTTPS upstream with enabled HTTP/3 support (chooses it if it's faster):
+
 ```shell
 ./dnsproxy -u https://dns.google/dns-query --http3
 ```
 
 DNS-over-HTTPS upstream with forced HTTP/3 (no fallback to other protocol):
+
 ```shell
 ./dnsproxy -u h3://dns.google/dns-query
 ```
 
 DNSCrypt upstream ([DNS Stamp](https://dnscrypt.info/stamps) of AdGuard DNS):
+
 ```shell
 ./dnsproxy -u sdns://AQIAAAAAAAAAFDE3Ni4xMDMuMTMwLjEzMDo1NDQzINErR_JS3PLCu_iZEIbq95zkSV2LFsigxDIuUso_OQhzIjIuZG5zY3J5cHQuZGVmYXVsdC5uczEuYWRndWFyZC5jb20
 ```
 
 DNS-over-HTTPS upstream ([DNS Stamp](https://dnscrypt.info/stamps) of Cloudflare DNS):
+
 ```shell
 ./dnsproxy -u sdns://AgcAAAAAAAAABzEuMC4wLjGgENk8mGSlIfMGXMOlIlCcKvq7AVgcrZxtjon911-ep0cg63Ul-I8NlFj4GplQGb_TTLiczclX57DvMV8Q-JdjgRgSZG5zLmNsb3VkZmxhcmUuY29tCi9kbnMtcXVlcnk
 ```
 
 DNS-over-TLS upstream with two fallback servers (to be used when the main upstream is not available):
+
 ```shell
 ./dnsproxy -u tls://dns.adguard.com -f 8.8.8.8:53 -f 1.1.1.1:53
 ```
@@ -173,21 +187,25 @@ DNS-over-TLS upstream with two fallback servers (to be used when the main upstre
 ### Encrypted DNS server
 
 Runs a DNS-over-TLS proxy on `127.0.0.1:853`.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 --tls-port=853 --tls-crt=example.crt --tls-key=example.key -u 8.8.8.8:53 -p 0
 ```
 
 Runs a DNS-over-HTTPS proxy on `127.0.0.1:443`.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 --https-port=443 --tls-crt=example.crt --tls-key=example.key -u 8.8.8.8:53 -p 0
 ```
 
 Runs a DNS-over-HTTPS proxy on `127.0.0.1:443` with HTTP/3 support.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 --https-port=443 --http3 --tls-crt=example.crt --tls-key=example.key -u 8.8.8.8:53 -p 0
 ```
 
 Runs a DNS-over-QUIC proxy on `127.0.0.1:853`.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 --quic-port=853 --tls-crt=example.crt --tls-key=example.key -u 8.8.8.8:53 -p 0
 ```
@@ -203,16 +221,19 @@ Runs a DNSCrypt proxy on `127.0.0.1:443`.
 ### Additional features
 
 Runs a DNS proxy on `0.0.0.0:53` with rate limit set to `10 rps`, enabled DNS cache, and that refuses type=ANY requests.
+
 ```shell
 ./dnsproxy -u 8.8.8.8:53 -r 10 --cache --refuse-any
 ```
 
 Runs a DNS proxy on 127.0.0.1:5353 with multiple upstreams and enable parallel queries to all configured upstream servers.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -p 5353 -u 8.8.8.8:53 -u 1.1.1.1:53 -u tls://dns.adguard.com --all-servers
 ```
 
 Loads upstreams list from a file.
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -p 5353 -u ./upstreams.txt
 ```
@@ -231,11 +252,13 @@ Loads upstreams list from a file.
 > NAT64 gateways without any other configuration.
 
 Enables DNS64 with the default "Well-Known Prefix" `64:ff9b::/96`:
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -p 5353 -u 8.8.8.8 --dns64
 ```
 
 You can also specify a custom DNS64 prefix:
+
 ```shell
 ./dnsproxy -l 127.0.0.1 -p 5353 -u 8.8.8.8 --dns64 --dns64-prefix=64:ffff::
 ```
@@ -252,11 +275,12 @@ In this case, `dnsproxy` will make sure that DNS responses are cached for at lea
 It makes sense to run it with multiple upstream servers only.
 
 Run a DNS proxy with two upstreams, min-TTL set to 10 minutes, fastest address detection is enabled:
+
 ```
 ./dnsproxy -u 8.8.8.8 -u 1.1.1.1 --cache --cache-min-ttl=600 --fastest-addr
 ```
 
- who run `dnsproxy` with multiple upstreams
+who run `dnsproxy` with multiple upstreams
 
 ### Specifying upstreams for domains
 
@@ -267,23 +291,26 @@ You can specify upstreams that will be used for a specific domain(s). We use the
 If one or more domains are specified, that upstream (`upstreamString`) is used only for those domains. Usually, it is used for private nameservers. For instance, if you have a nameserver on your network which deals with `xxx.internal.local` at `192.168.0.1` then you can specify `[/internal.local/]192.168.0.1`, and dnsproxy will send all queries to that nameserver. Everything else will be sent to the default upstreams (which are mandatory!).
 
 1. An empty domain specification, // has the special meaning of "unqualified names only" ie names without any dots in them.
-2. More specific domains take precedence over less specific domains, so: `--upstream=[/host.com/]1.2.3.4 --upstream=[/www.host.com/]2.3.4.5` will send queries for *.host.com to 1.2.3.4, except *.www.host.com, which will go to 2.3.4.5
+2. More specific domains take precedence over less specific domains, so: `--upstream=[/host.com/]1.2.3.4 --upstream=[/www.host.com/]2.3.4.5` will send queries for _.host.com to 1.2.3.4, except _.www.host.com, which will go to 2.3.4.5
 3. The special server address `#` means, "use the standard servers", so: `--upstream=[/host.com/]1.2.3.4 --upstream=[/www.host.com/]#` will send queries for \*.host.com to 1.2.3.4, except \*.www.host.com which will be forwarded as usual.
 4. The wildcard `*` has special meaning of "any sub-domain", so: `--upstream=[/*.host.com/]1.2.3.4` will send queries for \*.host.com to 1.2.3.4, but host.com will be forwarded to default upstreams.
 
 **Examples**
 
 Sends queries for `*.local` domains to `192.168.0.1:53`. Other queries are sent to `8.8.8.8:53`.
+
 ```
 ./dnsproxy -u 8.8.8.8:53 -u [/local/]192.168.0.1:53
 ```
 
 Sends queries for `*.host.com` to `1.1.1.1:53` except for `*.maps.host.com` which are sent to `8.8.8.8:53` (along with other queries).
+
 ```
 ./dnsproxy -u 8.8.8.8:53 -u [/host.com/]1.1.1.1:53 -u [/maps.host.com/]#
 ```
 
 Sends queries for `*.host.com` to `1.1.1.1:53` except for `host.com` which is sent to `8.8.8.8:53` (along with other queries).
+
 ```
 ./dnsproxy -u 8.8.8.8:53 -u [/*.host.com/]1.1.1.1:53
 ```
@@ -296,7 +323,7 @@ To enable support for EDNS Client Subnet extension you should run dnsproxy with 
 ./dnsproxy -u 8.8.8.8:53 --edns
 ```
 
-Now if you connect to the proxy from the Internet - it will pass through your original IP address's prefix to the upstream server.  This way the upstream server may respond with IP addresses of the servers that are located near you to minimize latency.
+Now if you connect to the proxy from the Internet - it will pass through your original IP address's prefix to the upstream server. This way the upstream server may respond with IP addresses of the servers that are located near you to minimize latency.
 
 If you want to use EDNS CS feature when you're connecting to the proxy from a local network, you need to set `--edns-addr=PUBLIC_IP` argument:
 
@@ -308,7 +335,7 @@ Now even if your IP address is 192.168.0.1 and it's not a public IP, the proxy w
 
 ### Bogus NXDomain
 
-This option is similar to dnsmasq `bogus-nxdomain`.  `dnsproxy` will transform
+This option is similar to dnsmasq `bogus-nxdomain`. `dnsproxy` will transform
 responses that contain at least a single IP address which is also specified by
 the option into `NXDOMAIN`. Can be specified multiple times.
 
@@ -319,7 +346,7 @@ blocked domains, and transform them to `NXDOMAIN`.
 ./dnsproxy -u 94.140.14.14:53 --bogus-nxdomain=0.0.0.0
 ```
 
-CIDR ranges are supported as well.  The following will respond with `NXDOMAIN`
+CIDR ranges are supported as well. The following will respond with `NXDOMAIN`
 instead of responses containing any IP from `192.168.0.0`-`192.168.255.255`:
 
 ```
