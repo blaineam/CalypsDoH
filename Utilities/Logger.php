@@ -68,6 +68,7 @@ class Logger
         }
 
         ftruncate($handler, 0);
+        rewind($handler);
         fwrite($handler, AES::Encrypt($logs, $passphrase));
         flock($handler, LOCK_UN);
         fclose($handler);
