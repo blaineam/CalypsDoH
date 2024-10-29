@@ -36,7 +36,7 @@ class Logger
             return ['handler' => $handler, 'data' => false];
         }
 
-        if(file_exists($logPath)) {
+        if (file_exists($logPath)) {
             $data = '';
             while (!feof($handler)) {
                 $data .= fread($handler, 1024);
@@ -44,7 +44,7 @@ class Logger
             $data = trim($data);
             if (empty($data)) {
                 $logs = self::TEMPLATES[$type];
-            } elseif(($logs = AES::Decrypt($data, $passphrase)) || json_last_error() === JSON_ERROR_NONE) {
+            } elseif (($logs = AES::Decrypt($data, $passphrase)) || json_last_error() === JSON_ERROR_NONE) {
                 return ['handler' => $handler, 'data' => $logs];
             } else {
                 error_log("could not read logs file: {$logPath}");
@@ -87,7 +87,7 @@ class Logger
 
     public static function truncateLogs($identity)
     {
-        while(file_put_contents(self::getLogPath($identity, 'raw'), '', LOCK_EX) === false) {
+        while (file_put_contents(self::getLogPath($identity, 'raw'), '', LOCK_EX) === false) {
             usleep(10);
         };
     }
@@ -95,7 +95,7 @@ class Logger
     public static function getReadHandler(string $identity, string $type)
     {
         $logPath = self::getLogPath($identity, $type);
-        if(!file_exists($logPath)) {
+        if (!file_exists($logPath)) {
             return false;
         }
         return fopen($logPath, 'r');

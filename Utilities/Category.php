@@ -38,7 +38,7 @@ class Category
             $response = curl_exec($ch);
             $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $json = json_decode($response, true);
-            switch($status_code) {
+            switch ($status_code) {
                 case 200:
                     $category = $json['data'][0]['categories'][0]['label'];
                     file_put_contents($cachePath, json_encode(array_merge($cachedCategories, [$domain => $category])));
@@ -74,7 +74,7 @@ class Category
             }
             $category = str_replace('-nl.txt', '', basename($localPath));
 
-            if(!$useExec) {
+            if (!$useExec) {
                 if (GrepLR::run($localPath, $domain)) {
                     return $category;
                 }

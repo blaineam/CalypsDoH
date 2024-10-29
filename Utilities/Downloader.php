@@ -6,7 +6,7 @@ class Downloader
 {
     public function __construct(string $identity, string $deviceName)
     {
-        if($_GET['dl'] === 'windows') {
+        if ($_GET['dl'] === 'windows') {
             self::downloadWindowsInstaller($identity, $deviceName);
         }
         self::downloadAppleProfile($identity, $deviceName);

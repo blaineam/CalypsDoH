@@ -68,7 +68,7 @@ class Server
         bool $enableStats = true,
     ) {
         set_time_limit(1);
-        if(is_null($requestingDeviceName) || is_null($requestingIdentity)) {
+        if (is_null($requestingDeviceName) || is_null($requestingIdentity)) {
             $path = explode('?', $_SERVER['REQUEST_URI'])[0];
             $this->requestingIdentity = basename(dirname($path));
             $this->requestingDeviceName = basename($path);
@@ -88,7 +88,7 @@ class Server
         $this->dns = ($_GET['dns'] ?? base64_encode(file_get_contents('php://input')));
         try {
             $this->message = (new DNSLib\Parser())->parseMessage(base64_decode($this->dns));
-        } catch(\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException $e) {
             $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
             return;
         }
@@ -108,8 +108,8 @@ class Server
             return;
         }
 
-        foreach($remaps as $domainIpPair) {
-            if($domainIpPair[0] === $this->requestedDomain) {
+        foreach ($remaps as $domainIpPair) {
+            if ($domainIpPair[0] === $this->requestedDomain) {
                 $this->generateRemappedResponse($this->message, $domainIpPair[1]);
             }
         }
@@ -234,14 +234,14 @@ class Server
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if(!$useExec) {
+            if (!$useExec) {
                 if (GrepLR::run($localPath, $domain)) {
                     return true;
                 }
             }
         }
 
-        if($useExec) {
+        if ($useExec) {
             $ouput = [];
             exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
             return $exitCode == 0;
@@ -263,14 +263,14 @@ class Server
                 file_put_contents($localPath, file_get_contents($blocklist));
             }
 
-            if(!$useExec) {
+            if (!$useExec) {
                 if (GrepLR::run($localPath, $domain)) {
                     return true;
                 }
             }
         }
 
-        if($useExec) {
+        if ($useExec) {
             $ouput = [];
             exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
             return $exitCode == 0;

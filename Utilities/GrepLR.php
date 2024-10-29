@@ -9,7 +9,7 @@ class GrepLR
         $handle = fopen($filename, 'r');
         if ($handle) {
             while (($line = fgets($handle)) !== false) {
-                if($line === $needle) {
+                if ($line === $needle) {
                     return true;
                 }
             }
