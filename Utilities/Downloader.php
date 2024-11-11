@@ -4,15 +4,15 @@ namespace CalypsDoH\Utilities;
 
 class Downloader
 {
-    public function __construct(string $identity, string $deviceName)
+    public function __construct(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "")
     {
         if ($_GET['dl'] === 'windows') {
-            self::downloadWindowsInstaller($identity, $deviceName);
+            self::downloadWindowsInstaller($identity, $deviceName, $delimiter, $prefix);
         }
-        self::downloadAppleProfile($identity, $deviceName);
+        self::downloadAppleProfile($identity, $deviceName, $delimiter, $prefix);
     }
 
-    public static function downloadAppleProfile(string $identity, string $deviceName)
+    public static function downloadAppleProfile(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "/")
     {
         header('Content-Type: application/x-apple-aspen-config');
         header('Content-Disposition: attachment; filename="barker-apple-'
@@ -34,7 +34,7 @@ class Downloader
                         <key>DNSProtocol</key>
                         <string>HTTPS</string>
                         <key>ServerURL</key>
-                        <string>https://' . $_SERVER['HTTP_HOST'] . '/' . $identity . '/' . rawurlencode($deviceName) . '</string>
+                        <string>https://' . $_SERVER['HTTP_HOST'] . $prefix . $identity . $delimiter . rawurlencode($deviceName) . '</string>
                     </dict>
                     <key>PayloadDescription</key>
                     <string>Configures device to use Barker Encrypted DNS over HTTPS</string>
@@ -71,7 +71,7 @@ class Downloader
         die();
     }
 
-    public static function downloadWindowsInstaller(string $identity, string $deviceName)
+    public static function downloadWindowsInstaller(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "/")
     {
         header('Content-Type: application/bat');
         header('Content-Disposition: attachment; filename="barker-windows-'
@@ -100,7 +100,7 @@ exit /b
 exit /b
 
 :run
-    set DoHClientAddress=https://' . $_SERVER['HTTP_HOST'] . '/' . $identity . '/' . rawurlencode($deviceName) . '
+    set DoHClientAddress=https://' . $_SERVER['HTTP_HOST'] . $prefix . $identity . $delimiter . rawurlencode($deviceName) . '
     
     curl.exe --output C:\nssm.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/nssm.exe
     curl.exe --output C:\dnsproxy.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/dnsproxy.exe
