@@ -68,14 +68,14 @@ class Server
         string $requestingDeviceName = null,
         int $blockLevel = 2,
         bool $enableStats = true,
-				string $dlDelimiter = '/',
-				string $dlPrefix = '/'
+        string $dlDelimiter = '/',
+        string $dlPrefix = '/'
     ) {
         set_time_limit(1);
         if (is_null($requestingDeviceName) || is_null($requestingIdentity)) {
-            $path = explode('?', 
-						str_replace(ltrim($dlPrefix, '/'), '', 
-						$_SERVER['REQUEST_URI']))[0];
+            $path = explode('?',
+                str_replace(ltrim($dlPrefix, '/'), '',
+                    $_SERVER['REQUEST_URI']))[0];
             $this->requestingIdentity = basename(dirname($path));
             $this->requestingDeviceName = basename($path);
         } else {
@@ -87,9 +87,9 @@ class Server
             die('Invalid Identifier passed to request');
         }
 
-				$this->dlDelimiter = $dlDelimiter;
+        $this->dlDelimiter = $dlDelimiter;
         $this->dlPrefix = $dlPrefix;
-				
+
         if (isset($_GET['dl'])) {
             new Downloader($this->requestingIdentity, $this->requestingDeviceName, $this->dlDelimiter, $this->dlPrefix);
         }
@@ -101,7 +101,7 @@ class Server
             $this->getAllowedResponse($dohServers ?? self::DOH_SERVERS, $this->dns);
             return;
         }
-				
+
         $this->enableStats = $enableStats;
         $this->requestedDomain = strtolower($this->message->questions[0]->name);
         $this->allowedDomains = array_filter($allowedDomains);
