@@ -4,7 +4,7 @@ namespace CalypsDoH\Utilities;
 
 class Downloader
 {
-    public function __construct(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "")
+    public function __construct(string $identity, string $deviceName, string $delimiter = '/', string $prefix = '')
     {
         if ($_GET['dl'] === 'windows') {
             self::downloadWindowsInstaller($identity, $deviceName, $delimiter, $prefix);
@@ -12,7 +12,7 @@ class Downloader
         self::downloadAppleProfile($identity, $deviceName, $delimiter, $prefix);
     }
 
-    public static function downloadAppleProfile(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "/")
+    public static function downloadAppleProfile(string $identity, string $deviceName, string $delimiter = '/', string $prefix = '/')
     {
         header('Content-Type: application/x-apple-aspen-config');
         header('Content-Disposition: attachment; filename="barker-apple-'
@@ -71,7 +71,7 @@ class Downloader
         die();
     }
 
-    public static function downloadWindowsInstaller(string $identity, string $deviceName, string $delimiter = "/", string $prefix = "/")
+    public static function downloadWindowsInstaller(string $identity, string $deviceName, string $delimiter = '/', string $prefix = '/')
     {
         header('Content-Type: application/bat');
         header('Content-Disposition: attachment; filename="barker-windows-'
