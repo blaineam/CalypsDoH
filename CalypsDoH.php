@@ -120,6 +120,7 @@ class Server
         foreach ($remaps as $domainIpPair) {
             if ($domainIpPair[0] === $this->requestedDomain) {
                 $this->generateRemappedResponse($this->message, $domainIpPair[1]);
+                return;
             }
         }
 
@@ -234,7 +235,7 @@ class Server
     {
         $directory = __DIR__ . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . 'ALARMING' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0750, true);
         }
 
         foreach ($this->alarming as $blocklist) {
@@ -252,7 +253,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 
@@ -263,7 +264,7 @@ class Server
     {
         $directory = __DIR__ . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . 'ANNOYANCES' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0750, true);
         }
 
         foreach ($this->annoying as $blocklist) {
@@ -281,7 +282,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 
