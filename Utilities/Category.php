@@ -37,6 +37,7 @@ class Category
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $response = curl_exec($ch);
             $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
             $json = json_decode($response, true);
             switch ($status_code) {
                 case 200:
@@ -64,7 +65,7 @@ class Category
 
         $directory = $storageDirectory . 'ALARMING' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0750, true);
         }
 
         foreach (Server::ALARMABLES as $blocklist) {
@@ -80,7 +81,7 @@ class Category
                 }
             } else {
                 $output = [];
-                exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
+                exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
                 if ($exitCode == 0) {
                     return $category;
                 }

@@ -14,9 +14,11 @@ class Downloader
 
     public static function downloadAppleProfile(string $identity, string $deviceName, string $delimiter = '/', string $prefix = '/')
     {
+        $safeDeviceName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $deviceName);
+        $safeHost = htmlspecialchars(filter_var($_SERVER['HTTP_HOST'], FILTER_SANITIZE_URL), ENT_XML1, 'UTF-8');
         header('Content-Type: application/x-apple-aspen-config');
         header('Content-Disposition: attachment; filename="barker-apple-'
-                                    . $deviceName . '.mobileconfig"');
+                                    . $safeDeviceName . '.mobileconfig"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
@@ -34,7 +36,7 @@ class Downloader
                         <key>DNSProtocol</key>
                         <string>HTTPS</string>
                         <key>ServerURL</key>
-                        <string>https://' . $_SERVER['HTTP_HOST'] . $prefix . $identity . $delimiter . rawurlencode($deviceName) . '</string>
+                        <string>https://' . $safeHost . $prefix . htmlspecialchars($identity, ENT_XML1, 'UTF-8') . $delimiter . rawurlencode($deviceName) . '</string>
                     </dict>
                     <key>PayloadDescription</key>
                     <string>Configures device to use Barker Encrypted DNS over HTTPS</string>
@@ -73,9 +75,11 @@ class Downloader
 
     public static function downloadWindowsInstaller(string $identity, string $deviceName, string $delimiter = '/', string $prefix = '/')
     {
+        $safeDeviceName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $deviceName);
+        $safeHost = preg_replace('/[^a-zA-Z0-9.\-:]/', '', $_SERVER['HTTP_HOST']);
         header('Content-Type: application/bat');
         header('Content-Disposition: attachment; filename="barker-windows-'
-                                    . $deviceName . '.bat"');
+                                    . $safeDeviceName . '.bat"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
@@ -100,7 +104,7 @@ exit /b
 exit /b
 
 :run
-    set DoHClientAddress=https://' . $_SERVER['HTTP_HOST'] . $prefix . $identity . $delimiter . rawurlencode($deviceName) . '
+    set DoHClientAddress=https://' . $safeHost . $prefix . rawurlencode($identity) . $delimiter . rawurlencode($deviceName) . '
     
     curl.exe --output C:\nssm.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/nssm.exe
     curl.exe --output C:\dnsproxy.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/dnsproxy.exe

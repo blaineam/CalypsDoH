@@ -83,7 +83,7 @@ class Server
             $this->requestingDeviceName = $requestingDeviceName;
         }
 
-        if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities)) {
+        if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities, true)) {
             die('Invalid Identifier passed to request');
         }
 
@@ -120,6 +120,7 @@ class Server
         foreach ($remaps as $domainIpPair) {
             if ($domainIpPair[0] === $this->requestedDomain) {
                 $this->generateRemappedResponse($this->message, $domainIpPair[1]);
+                return;
             }
         }
 
@@ -193,13 +194,13 @@ class Server
         $this->closeConnection($binary);
     }
 
-    public function closeConnection($body)
+    private function closeConnection($body)
     {
         set_time_limit(0);
         ignore_user_abort(true);
         ob_start();
         echo $body;
-        header("Connection: close\r\n");
+        header('Connection: close');
         ob_end_flush();
     }
 
@@ -234,7 +235,7 @@ class Server
     {
         $directory = __DIR__ . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . 'ALARMING' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0750, true);
         }
 
         foreach ($this->alarming as $blocklist) {
@@ -252,7 +253,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 
@@ -263,7 +264,7 @@ class Server
     {
         $directory = __DIR__ . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . 'ANNOYANCES' . DIRECTORY_SEPARATOR;
         if (!file_exists($directory)) {
-            mkdir($directory, 0777, true);
+            mkdir($directory, 0750, true);
         }
 
         foreach ($this->annoying as $blocklist) {
@@ -281,7 +282,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx '" . escapeshellarg($domain) . "' {$directory}*", $ouput, $exitCode);
+            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
             return $exitCode == 0;
         }
 

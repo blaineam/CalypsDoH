@@ -23,7 +23,9 @@ class Logger
 
     private static function getLogPath(string $identity, string $type): string
     {
-        return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . $identity . '-' . $type . '.json';
+        $safeIdentity = basename($identity);
+        $safeType = basename($type);
+        return __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Storage' . DIRECTORY_SEPARATOR . $safeIdentity . '-' . $safeType . '.json';
     }
 
     public static function getLogs(string $passphrase, string $identity, string $type): array
