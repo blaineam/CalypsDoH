@@ -185,6 +185,12 @@ func (s *Server) proxyUpstream(w http.ResponseWriter, query []byte) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Upstream %s returned status %d", upstream, resp.StatusCode)
+		http.Error(w, "Upstream error", http.StatusBadGateway)
+		return
+	}
+
 	// DNS responses should never exceed 65535 bytes
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 65535))
 	if err != nil {

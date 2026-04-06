@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -26,7 +27,16 @@ func main() {
 
 	addr := cfg.ListenAddr
 	log.Printf("CalypsDoH starting on %s", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	httpServer := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    1 << 16, // 64KB
+	}
+	if err := httpServer.ListenAndServe(); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
 }
