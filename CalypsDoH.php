@@ -253,7 +253,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
+            exec('grep -q -Fx ' . escapeshellarg($domain) . ' ' . escapeshellarg($directory) . '*', $ouput, $exitCode);
             return $exitCode == 0;
         }
 
@@ -282,7 +282,7 @@ class Server
 
         if ($useExec) {
             $ouput = [];
-            exec("grep -q -Fx " . escapeshellarg($domain) . " " . escapeshellarg($directory) . "*", $ouput, $exitCode);
+            exec('grep -q -Fx ' . escapeshellarg($domain) . ' ' . escapeshellarg($directory) . '*', $ouput, $exitCode);
             return $exitCode == 0;
         }
 
