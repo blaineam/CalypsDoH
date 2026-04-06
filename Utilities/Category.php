@@ -37,6 +37,7 @@ class Category
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $response = curl_exec($ch);
             $status_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
             $json = json_decode($response, true);
             switch ($status_code) {
                 case 200:

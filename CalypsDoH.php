@@ -83,7 +83,7 @@ class Server
             $this->requestingDeviceName = $requestingDeviceName;
         }
 
-        if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities)) {
+        if (!is_null($allowedIdentities) && !in_array($this->requestingIdentity, $allowedIdentities, true)) {
             die('Invalid Identifier passed to request');
         }
 
@@ -194,13 +194,13 @@ class Server
         $this->closeConnection($binary);
     }
 
-    public function closeConnection($body)
+    private function closeConnection($body)
     {
         set_time_limit(0);
         ignore_user_abort(true);
         ob_start();
         echo $body;
-        header("Connection: close\r\n");
+        header('Connection: close');
         ob_end_flush();
     }
 

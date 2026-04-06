@@ -104,7 +104,7 @@ exit /b
 exit /b
 
 :run
-    set DoHClientAddress=https://' . $safeHost . $prefix . $identity . $delimiter . rawurlencode($deviceName) . '
+    set DoHClientAddress=https://' . $safeHost . $prefix . rawurlencode($identity) . $delimiter . rawurlencode($deviceName) . '
     
     curl.exe --output C:\nssm.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/nssm.exe
     curl.exe --output C:\dnsproxy.exe --url https://barker.wemiller.com/CalypsDoH/Installers/Windows/dnsproxy.exe
