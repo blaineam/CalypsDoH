@@ -60,6 +60,21 @@ func TestAESWrongPassphrase(t *testing.T) {
 	}
 }
 
+func TestAESDecryptEmptyCiphertext(t *testing.T) {
+	// Should not panic on empty/malformed input
+	_, err := aesDecrypt(`{"ct":"","iv":"00000000000000000000000000000000","s":"0000000000000000"}`, "pass")
+	if err == nil {
+		t.Error("Expected error for empty ciphertext")
+	}
+}
+
+func TestAESDecryptInvalidPadding(t *testing.T) {
+	_, err := aesDecrypt(`{"ct":"AAAAAAAAAAAAAAAAAAAAAA==","iv":"00000000000000000000000000000000","s":"0000000000000000"}`, "pass")
+	if err == nil {
+		t.Error("Expected error for invalid padding")
+	}
+}
+
 func TestBlocklistLookup(t *testing.T) {
 	bl := &Blocklist{
 		alarming: map[string]struct{}{

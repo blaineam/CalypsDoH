@@ -85,17 +85,22 @@ func aesDecrypt(jsonStr string, passphrase string) (json.RawMessage, error) {
 		return nil, err
 	}
 
-	if len(ciphertext)%aes.BlockSize != 0 {
+	if len(ciphertext) == 0 || len(ciphertext)%aes.BlockSize != 0 {
 		return nil, fmt.Errorf("ciphertext not a multiple of block size")
 	}
 
 	mode := cipher.NewCBCDecrypter(block, iv)
 	mode.CryptBlocks(ciphertext, ciphertext)
 
-	// Remove PKCS7 padding
+	// Remove and validate PKCS7 padding
 	padLen := int(ciphertext[len(ciphertext)-1])
-	if padLen > aes.BlockSize || padLen == 0 {
+	if padLen > aes.BlockSize || padLen == 0 || padLen > len(ciphertext) {
 		return nil, fmt.Errorf("invalid padding")
+	}
+	for i := len(ciphertext) - padLen; i < len(ciphertext); i++ {
+		if ciphertext[i] != byte(padLen) {
+			return nil, fmt.Errorf("invalid padding")
+		}
 	}
 	plaintext := ciphertext[:len(ciphertext)-padLen]
 

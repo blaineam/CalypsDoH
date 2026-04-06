@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -15,6 +16,8 @@ type LogEntry struct {
 	Level    int    `json:"level"`
 	Time     string `json:"time"`
 }
+
+var logMu sync.Mutex
 
 func AppendLog(cfg *Config, identity, deviceName, domain string, level int) {
 	entry := LogEntry{
@@ -38,6 +41,9 @@ func AppendLog(cfg *Config, identity, deviceName, domain string, level int) {
 	}
 
 	logPath := filepath.Join(cfg.StorageDir, sanitizeFilename(identity)+"-raw.json")
+
+	logMu.Lock()
+	defer logMu.Unlock()
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {

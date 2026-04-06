@@ -52,9 +52,9 @@ func xmlEscape(s string) string {
 func GenerateAppleProfile(w http.ResponseWriter, host, identity, deviceName, safeName string, cfg *Config) {
 	serverURL := fmt.Sprintf("https://%s%s%s%s%s",
 		xmlEscape(host),
-		cfg.DLPrefix,
+		xmlEscape(cfg.DLPrefix),
 		xmlEscape(identity),
-		cfg.DLDelimiter,
+		xmlEscape(cfg.DLDelimiter),
 		url.PathEscape(deviceName),
 	)
 

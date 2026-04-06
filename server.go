@@ -54,13 +54,12 @@ func (s *Server) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	// Parse DNS message to extract domain
 	msg := new(dns.Msg)
 	if err := msg.Unpack(dnsQuery); err != nil {
-		// Can't parse - just forward upstream
-		s.proxyUpstream(w, dnsQuery)
+		http.Error(w, "Invalid DNS message", http.StatusBadRequest)
 		return
 	}
 
 	if len(msg.Question) == 0 {
-		s.proxyUpstream(w, dnsQuery)
+		http.Error(w, "Empty DNS question", http.StatusBadRequest)
 		return
 	}
 
@@ -119,11 +118,11 @@ func (s *Server) extractDNSQuery(r *http.Request) ([]byte, error) {
 	}
 
 	// POST: raw binary body
+	defer r.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(r.Body, 65535))
 	if err != nil {
 		return nil, err
 	}
-	defer r.Body.Close()
 	return body, nil
 }
 
@@ -174,7 +173,8 @@ func (s *Server) proxyUpstream(w http.ResponseWriter, query []byte) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	// DNS responses should never exceed 65535 bytes
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 65535))
 	if err != nil {
 		http.Error(w, "Read error", http.StatusBadGateway)
 		return
