@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -17,14 +16,39 @@ type LogEntry struct {
 	Time     string `json:"time"`
 }
 
-var logMu sync.Mutex
+var logCh chan logRequest
+
+type logRequest struct {
+	cfg        *Config
+	identity   string
+	deviceName string
+	domain     string
+	level      int
+}
+
+func StartLogWorker() {
+	logCh = make(chan logRequest, 1024)
+	go func() {
+		for req := range logCh {
+			writeLog(req)
+		}
+	}()
+}
 
 func AppendLog(cfg *Config, identity, deviceName, domain string, level int) {
+	select {
+	case logCh <- logRequest{cfg, identity, deviceName, domain, level}:
+	default:
+		// Channel full, drop log entry to avoid blocking DNS responses
+	}
+}
+
+func writeLog(req logRequest) {
 	entry := LogEntry{
-		Identity: identity,
-		Device:   deviceName,
-		Domain:   domain,
-		Level:    level,
+		Identity: req.identity,
+		Device:   req.deviceName,
+		Domain:   req.domain,
+		Level:    req.level,
 		Time:     time.Now().Format("2006-01-02 15:04:05"),
 	}
 
@@ -34,16 +58,13 @@ func AppendLog(cfg *Config, identity, deviceName, domain string, level int) {
 		return
 	}
 
-	encrypted, err := aesEncrypt(json.RawMessage(entryJSON), cfg.Passphrase)
+	encrypted, err := aesEncrypt(json.RawMessage(entryJSON), req.cfg.Passphrase)
 	if err != nil {
 		log.Printf("Failed to encrypt log entry: %v", err)
 		return
 	}
 
-	logPath := filepath.Join(cfg.StorageDir, sanitizeFilename(identity)+"-raw.json")
-
-	logMu.Lock()
-	defer logMu.Unlock()
+	logPath := filepath.Join(req.cfg.StorageDir, sanitizeFilename(req.identity)+"-raw.json")
 
 	f, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 	if err != nil {

@@ -131,6 +131,11 @@ func fetchBlocklist(url, cacheDir string) []string {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Blocklist %s returned status %d, using cache", url, resp.StatusCode)
+		return readDomainFile(cachePath)
+	}
+
 	// Cap blocklist downloads at 50MB to prevent OOM
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 50*1024*1024))
 	if err != nil {

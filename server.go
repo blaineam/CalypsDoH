@@ -88,9 +88,9 @@ func (s *Server) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		s.proxyUpstream(w, dnsQuery)
 	}
 
-	// Log asynchronously
+	// Log via buffered channel (non-blocking)
 	if s.config.EnableStats && s.config.Passphrase != "" {
-		go AppendLog(s.config, identity, deviceName, domain, domainLevel)
+		AppendLog(s.config, identity, deviceName, domain, domainLevel)
 	}
 }
 
@@ -108,22 +108,24 @@ func (s *Server) parseIdentityFromPath(r *http.Request) (string, string) {
 }
 
 func (s *Server) extractDNSQuery(r *http.Request) ([]byte, error) {
-	if r.Method == http.MethodGet {
+	switch r.Method {
+	case http.MethodGet:
 		dnsParam := r.URL.Query().Get("dns")
 		if dnsParam == "" {
 			return nil, fmt.Errorf("missing dns parameter")
 		}
 		// DoH uses base64url encoding (RFC 8484)
 		return base64.RawURLEncoding.DecodeString(dnsParam)
+	case http.MethodPost:
+		defer r.Body.Close()
+		body, err := io.ReadAll(io.LimitReader(r.Body, 65535))
+		if err != nil {
+			return nil, err
+		}
+		return body, nil
+	default:
+		return nil, fmt.Errorf("unsupported method: %s", r.Method)
 	}
-
-	// POST: raw binary body
-	defer r.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(r.Body, 65535))
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
 }
 
 func (s *Server) checkBlocks(domain string) int {
@@ -151,6 +153,11 @@ func (s *Server) checkBlocks(domain string) int {
 }
 
 func (s *Server) proxyUpstream(w http.ResponseWriter, query []byte) {
+	if len(s.config.DOHServers) == 0 {
+		http.Error(w, "No upstream DNS servers configured", http.StatusServiceUnavailable)
+		return
+	}
+
 	encoded := base64.RawURLEncoding.EncodeToString(query)
 
 	idx, _ := rand.Int(rand.Reader, big.NewInt(int64(len(s.config.DOHServers))))
@@ -164,7 +171,12 @@ func (s *Server) proxyUpstream(w http.ResponseWriter, query []byte) {
 	}
 	req.Header.Set("Accept", "application/dns-message")
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Upstream error: %v", err)

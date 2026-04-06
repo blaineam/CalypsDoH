@@ -11,6 +11,8 @@ import (
 func main() {
 	cfg := loadConfig()
 
+	StartLogWorker()
+
 	bl := NewBlocklist(cfg)
 	bl.Start()
 
