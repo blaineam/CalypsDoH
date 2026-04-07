@@ -1,4 +1,3 @@
 Storage/
-!Storage/.htaccess
-node_modules
 calypsdoh
+*.log

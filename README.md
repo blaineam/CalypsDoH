@@ -1,36 +1,72 @@
 # CalypsDoH
 
-A Simple DoH Server written in PHP with support for Blocklists and Basic Logging
+An encrypted DNS-over-HTTPS proxy with ad and tracker blocking, written in Go.
 
-## Use Case
+## Features
 
-There was a need for being able to spin up a DoH Compatible Server with the ability to capture and or block requests based on the request payload. This Project aims at providing a simple DoH Server that works with basic PHP Servers by limiting the dependencies used so it is highly portable.
+- **DNS-over-HTTPS proxying** -- accepts standard DoH GET and POST requests, forwards to upstream resolvers (Google DNS, Cloudflare, or custom)
+- **Blocklist management** -- pulls community blocklists on a schedule and blocks matching domains with `0.0.0.0` / `::` responses
+- **Configurable block levels** -- separate "annoying" (ads, tracking, malware) and "alarming" (adult, drugs, gambling) tiers
+- **Domain remapping** -- rewrite specific domains to alternate IPs
+- **Encrypted logging** -- request logs are AES-encrypted at rest
+- **Apple config profile generation** -- serves `.mobileconfig` profiles so iOS/macOS devices can use your proxy directly
 
-## Architecture
+## Building
 
-The overall design is quite simple:
+```bash
+go build -o calypsdoh .
+```
 
-1. Listen for the standard types of DoH requests that pass either a GET param or post a binary payload in DNS Wire Format.
-2. Attempt to parse the binary payload to determine the requested domain name.
-3. Check the domain name and determine a DOMAIN_CODE_LEVEL by using publicly available blocklists that are cached to the server for a period of time.
-4. Optionally save logs about the request to an encrypted file for use later by other systems such as a Notifier.
-5. If the domain is in a block list then respond with a 0.0.0.0 & :: DNS Response.
-6. If the domain is allowed, proxy the request to a random DoH Server
+## Configuration
 
-## How To Setup
+All configuration is via environment variables:
 
-1. Clone the repo to a PHP server instance
-2. Point a public domain name at the server.
-3. Update the passphrase either by setting an ENV variable or updating index.php
-4. Update the AllowedIdentities array in index.php
-5. Optionally setup any other options in index.php for your desired use case.
-6. To setup a DoH client using an apple device just visit your public domain using the following template:
-   - `https://<public_domain_name_from_step_2>/<allowed_identity_from_step_4>/<any_device_name_for_your_client_url_encoded>?dl`
-7. Enjoy :)
+| Variable | Default | Description |
+|---|---|---|
+| `LISTEN_ADDR` | `:8053` | Address and port to listen on |
+| `ENCRYPTION_PASSPHRASE_FOR_LOGS` | *(empty)* | AES passphrase for encrypted log files |
+| `ALLOWED_IDENTITIES` | *(empty)* | Comma-separated identity tokens for profile downloads |
+| `DOH_SERVERS` | Google, Cloudflare | Comma-separated upstream DoH server URLs |
+| `ANNOYING_URLS` | Blocklist Project lists | Comma-separated blocklist URLs (ads, tracking, malware) |
+| `ALARMING_URLS` | Blocklist Project lists | Comma-separated blocklist URLs (adult, drugs, gambling) |
+| `ALLOWED_DOMAINS` | *(empty)* | Comma-separated domains to always allow |
+| `BLOCKED_DOMAINS` | *(empty)* | Comma-separated domains to always block |
+| `REMAPS` | *(empty)* | Comma-separated `domain=ip` pairs for domain remapping |
+| `BLOCK_LEVEL` | `3` | Block level: 1 = off, 2 = annoying only, 3 = annoying + alarming |
+| `ENABLE_STATS` | `true` | Enable request statistics logging |
+| `DL_PREFIX` | `/` | URL prefix for profile download paths |
+| `DL_DELIMITER` | `/` | Delimiter between identity and device name in download URLs |
+| `STORAGE_DIR` | `Storage` | Directory for blocklist cache and log files |
 
-## Credits
+## Running as a Daemon
 
-This project would not have been possible without re-using some MIT Licensed code from the following repos:
-[https://github.com/reactphp/dns](https://github.com/reactphp/dns)
+Use the included `install-daemon.sh` to install CalypsDoH as a background service:
 
-[https://github.com/brainfoolong/cryptojs-aes-php](https://github.com/brainfoolong/cryptojs-aes-php)
+```bash
+# Install and start
+./install-daemon.sh
+
+# Check status
+./install-daemon.sh status
+
+# Stop and remove
+./install-daemon.sh uninstall
+```
+
+- **macOS**: installs a LaunchAgent at `~/Library/LaunchAgents/com.calypsdoh.daemon.plist`
+- **Linux**: installs a systemd user service at `~/.config/systemd/user/calypsdoh.service`
+
+The script will build the binary automatically if it does not already exist.
+
+## Security Notes
+
+The Go implementation (April 2026 audit) includes:
+
+- HTTP server timeouts (read, write, idle, header) to prevent slowloris and resource exhaustion
+- Maximum header size limits
+- Input validation on DNS wire-format payloads
+- Encrypted log storage using AES
+
+## License
+
+This project is released into the public domain under the [Unlicense](https://unlicense.org).
